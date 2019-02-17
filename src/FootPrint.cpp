@@ -1609,12 +1609,12 @@ void FootPrint::DetectTargetPerson(op::Array<float>& poses, vector<OpenPosePerso
 void calculateFootCoM(OpenPosePerson &person){
     cv::Point2f rFoot(0,0);
     cv::Point2f lFoot(0,0);
-    rFoot += person._body_parts_coord[19];
-    rFoot += person._body_parts_coord[20];
-    rFoot += person._body_parts_coord[21];
-    lFoot += person._body_parts_coord[22];
-    lFoot += person._body_parts_coord[23];
-    lFoot += person._body_parts_coord[24];
+    lFoot += person._body_parts_coord[19];
+    lFoot += person._body_parts_coord[20];
+    lFoot += person._body_parts_coord[21];
+    rFoot += person._body_parts_coord[22];
+    rFoot += person._body_parts_coord[23];
+    rFoot += person._body_parts_coord[24];
     person.rFoot = rFoot/3;
     person.lFoot = lFoot/3;
 }
@@ -2001,6 +2001,7 @@ void FootPrint::getHomographyMatrix(){
         cv::warpPerspective(backGroundImage, overViewImage, warpH, cv::Size(TARGET_AREA_WIDTH * 1000 * 2 * RESULT_SCALE,
                                                                             TARGET_AREA_HEIGHT * 1000 * 2 *
                                                                             RESULT_SCALE));
+
     }else{
         selectImagePoints(imagePoints);
         selectWorldPoints(scalePoints);
@@ -2012,6 +2013,7 @@ void FootPrint::getHomographyMatrix(){
 void FootPrint::setup(){
     getBackGroundImage();
     getHomographyMatrix();
+    this->px_to_mm = 1.0/RESULT_SCALE;
     cv::imshow("top view image", overViewImage);
     cv::waitKey();
     cv::destroyAllWindows();
@@ -2019,11 +2021,11 @@ void FootPrint::setup(){
 
 void FootPrint::exportPointsCSV() {
     for(int i=E_LEFT; i <= E_RIGHT; i++){
-        string fileName = (i == E_RIGHT ? "Rpoints.csv" : "Lpoints.csv");
+        string fileName = (i == E_RIGHT ? "RstepPoints.csv" : "LstepPoints.csv");
         vector<cv::Point3f> ptList = (i == E_RIGHT ? RstepList : LstepList);
-        ofstream file(_projects_path + "/" + fileName);
+        ofstream file(_result_folder + "/" + fileName);
         for(cv::Point3f pt : ptList){
-            file << pt.x << " " << pt.y << " " << pt.z << endl;
+            file << pt.x * px_to_mm << " " << pt.y * px_to_mm << " " << pt.z << endl;
         }
         file.close();
     }
@@ -2033,7 +2035,7 @@ void FootPrint::exportPointsTimeScale() {
     for(int i=E_LEFT; i <= E_RIGHT; i++){
         vector<int> stepList = this->stepNumList[i];
         string fileName = (i == E_RIGHT ? "RstepNumList.txt" : "LstepNumList.txt");
-        ofstream file(_projects_path + "/" + fileName);
+        ofstream file(_result_folder + "/" + fileName);
         for(int imID = 0; imID < stepList.size(); imID++) {
             file << stepList[imID] << endl;
         }
@@ -2043,7 +2045,7 @@ void FootPrint::exportPointsTimeScale() {
 
 void FootPrint::exportVoteSomeForPx() {
     string fileName = "voteNum.txt";
-    ofstream file(_projects_path + "/" + fileName);
+    ofstream file(_result_folder + "/" + fileName);
     for(int footID=E_LEFT; footID <= E_RIGHT; footID++){
         cv::Mat *voteMap = &voteMapList[footID];
 //        string fileName = (footID == E_RIGHT ? "RvoteNumAll.txt" : "LvoteNumAll.txt");
@@ -2062,6 +2064,7 @@ void FootPrint::exportVoteSomeForPx() {
 }
 
 void FootPrint::outputResults(){
+    myMkdir(_result_folder);
     exportPointsCSV();
     exportPointsTimeScale();
     exportVoteSomeForPx();
@@ -2115,6 +2118,7 @@ void FootPrint::estimateStepUsingHomography() {
         cv::imshow("input image", frame);
         cv::imshow("step map", stepMap);
         cv::waitKey(1);
+//        cout << stepMap.cols << " " << stepMap.rows << endl;
     }
     //可視化処理
     //接地点をファイル出力(x,y,t)
@@ -2492,7 +2496,7 @@ void FootPrint::voteToStepMap(OpenPosePerson target, const int imID, const int f
             cv::Point2f stepPt(xIdx, yIdx);
 
             //投影点がVOTEmap内にあれば
-            cout << xIdx << " " << yIdx << endl;
+//            cout << xIdx << " " << yIdx << endl;
             if (xIdx >= 0 && xIdx < voteMap->cols && yIdx >= 0 && yIdx < voteMap->rows) {
                 voteMap->at<cv::Vec<unsigned char, CHANNEL>>(stepPt)[dstChannel] = 1;
 

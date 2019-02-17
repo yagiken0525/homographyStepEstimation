@@ -37,6 +37,7 @@ public:
         _video_path = _projects_path + "/videos/" + _video_name + VIDEO_TYPE;
         _openPose_path = "../projects/" + _project_name + "/openPoseData/";
         _sfm_projects_path = "/home/yagi/sfmDR/projects/" + _project_name + "/";
+        _result_folder = _projects_path + "/results/" + video_name + "/";
     };
     ~FootPrint(){};
 
@@ -117,7 +118,7 @@ public:
     bool CHECKER_BOARD_CALIBRATION= true;
     int W = 9;
     int H = 6;
-    float SCALE = 100.0;
+    float SCALE = 100.0; //mm
 
     int FLOOR_WIDTH = 150;
     int PLANE_WIDTH = 200;
@@ -147,6 +148,7 @@ public:
     std::string _openPose_path;
     std::string _camera_path;
     std::string _sfm_projects_path;
+    std::string _result_folder;
 
     std::vector<bool> getFootFlag(const int id);
     void voteForHomography(OpenPosePerson target, const int imID);
@@ -236,6 +238,7 @@ public:
     int prevPrevStepFrame;
     float walkingDistance;
     int numOfSteps;
+    float px_to_mm;
     std::vector<std::vector<cv::Point2f>> stepedPointList;
     std::vector<cv::Point3f> RstepList;
     std::vector<cv::Point3f> LstepList;
