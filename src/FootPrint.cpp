@@ -4,7 +4,7 @@
 
 #include "FootPrint.h"
 #include "basicFunctions/basicFunction.h"
-#include "openPose/myOpenPose.h"
+//#include "openPose/myOpenPose.h"
 #include <opencv2/sfm.hpp>
 
 using namespace std;
@@ -29,8 +29,8 @@ FootPrint::FootPrint(string project_name, string video_name){
     _video_name = video_name;
     _projects_path = "../projects/" + _project_name + "/";
     _video_path = _projects_path + "/videos/" + _video_name + VIDEO_TYPE;
-    _openPose_path = "../projects/" + _project_name + "/openPoseData/";
-    _sfm_projects_path = "/home/yagi/sfmDR/projects/" + _project_name + "/";
+//    _openPose_path = "../projects/" + _project_name + "/openPoseData/";
+//    _sfm_projects_path = "/home/yagi/sfmDR/projects/" + _project_name + "/";
     _result_folder = _projects_path + "/results/" + video_name + "/";
 };
 
@@ -43,7 +43,6 @@ FootPrint::FootPrint(string project_name, string video_name){
 void FootPrint::setup(){
     getBackGroundImage();
     getHomographyMatrix();
-    this->px_to_mm = 1.0/RESULT_SCALE;
 };
 
 
@@ -60,7 +59,7 @@ void FootPrint::getBackGroundImage() {
         while (1) {
             capture >> backGround;
             cv::Mat dummy;
-            cv::resize(backGround, dummy, cv::Size(), IMAGE_WIDTH/backGround.cols, IMAGE_HEIGHT/backGround.rows);
+            cv::resize(backGround, dummy, cv::Size(), VIS_IMAGE_WIDTH/backGround.cols, VIS_IMAGE_HEIGHT/backGround.rows);
             cv::imshow("checker board: push S to save", dummy);
             int k = cv::waitKey(0);
             if (k == 115) {
@@ -77,7 +76,7 @@ void FootPrint::getBackGroundImage() {
 void FootPrint::getHomographyMatrix(){
     vector<cv::Point2f> imagePoints;
     vector<cv::Point2f> scalePoints;
-    if(CHECKER_BOARD_CALIBRATION){
+    if(USE_CHECKER_BOARD){
         cv::Mat checkerBoardImage = cv::imread(_projects_path + "/calibrationBoard.jpg");
         if(checkerBoardImage.empty()) {
             cv::VideoCapture capture;
@@ -90,7 +89,7 @@ void FootPrint::getHomographyMatrix(){
             while (1) {
                 capture >> checkerBoardImage;
                 cv::Mat dummy;
-                cv::resize(checkerBoardImage, dummy, cv::Size(), IMAGE_WIDTH/checkerBoardImage.cols, IMAGE_HEIGHT/checkerBoardImage.rows);
+                cv::resize(checkerBoardImage, dummy, cv::Size(), VIS_IMAGE_WIDTH/checkerBoardImage.cols, VIS_IMAGE_HEIGHT/checkerBoardImage.rows);
                 cv::imshow("checker board", dummy);
                 int k = cv::waitKey(0);
                 if (k == 115) {
@@ -109,11 +108,11 @@ void FootPrint::getHomographyMatrix(){
             scalePoints[i].x+=SCALE;
             scalePoints[i].y+=SCALE;
         }
-        scalePoints = scalingPts(scalePoints, RESULT_SCALE);
+        scalePoints = scalingPts(scalePoints, PIXEL_SCALE);
         warpH = cv::findHomography(imagePoints, scalePoints);
-        cv::warpPerspective(backGroundImage, overViewImage, warpH, cv::Size(TARGET_AREA_WIDTH * 1000 * 2 * RESULT_SCALE,
+        cv::warpPerspective(backGroundImage, overViewImage, warpH, cv::Size(TARGET_AREA_WIDTH * 1000 * 2 * PIXEL_SCALE,
                                                                             TARGET_AREA_HEIGHT * 1000 * 2 *
-                                                                            RESULT_SCALE));
+                                                                            PIXEL_SCALE));
 
     }else{
         selectImagePoints(imagePoints);
@@ -174,16 +173,16 @@ void FootPrint::selectWorldPoints(std::vector<cv::Point2f> & scalePoints){
     ifstream scaleFile(_projects_path + "/scale.txt");
     string str;
     vector<string> strList;
-    float imWidth = TARGET_AREA_WIDTH * MtoMM * RESULT_SCALE;
-    float imHeight = TARGET_AREA_HEIGHT * MtoMM * RESULT_SCALE;
+    float imWidth = TARGET_AREA_WIDTH * MtoMM * PIXEL_SCALE;
+    float imHeight = TARGET_AREA_HEIGHT * MtoMM * PIXEL_SCALE;
     while (getline(scaleFile, str))
     {
         cv::Point2f pt;
         strList = yagi::split(str, ' ');
         pt.x = stof(strList[0]);
         pt.y = stof(strList[1]);
-        pt.x *= RESULT_SCALE;
-        pt.y *= RESULT_SCALE;
+        pt.x *= PIXEL_SCALE;
+        pt.y *= PIXEL_SCALE;
         pt.x += imWidth;
         pt.y += imHeight;
 
@@ -230,7 +229,7 @@ void FootPrint::mainProcess() {
                 if (frameID == 0) {
                     firstFrame = frame;
                     DetectTargetPerson(poses, personList, newTarget);
-                    Init(newTarget);
+                    Init();
                 } else {
                     getPosesInImage(poses, personList);
                     tracking(prevTarget, newTarget, personList);
@@ -378,13 +377,12 @@ void FootPrint::DetectTargetPerson(op::Array<float>& poses, vector<OpenPosePerso
 
 
 
-void FootPrint::Init(OpenPosePerson targetPerson){
+void FootPrint::Init(){
 
     for(int i = 0; i < voteMapChannelNum; i++){
         voteMapList.push_back(cv::Mat::zeros(overViewImage.size(), CV_8UC(CHANNEL)));
     }
     stepMap = overViewImage.clone();
-    trajectoryMap = overViewImage.clone();
 
     for(int i = 0; i < VISUALIZE_FRAMES; i++) {
         vector<cv::Point2f> ptList;
@@ -395,24 +393,6 @@ void FootPrint::Init(OpenPosePerson targetPerson){
     vector<int> listL;
     stepNumList.push_back(listR);
     stepNumList.push_back(listL);
-    originalStepMap = stepMap.clone();
-
-    //接地点の初期化
-    prevStep = warpPoint(targetPerson.rFoot, warpH);
-    prevPrevStep = warpPoint(targetPerson.lFoot, warpH);
-
-    StepInfo firstStep;
-    firstStep.frame = 0;
-    firstStep.stride = 0;
-    firstStep.speed = 0;
-    firstStep.stepPosition = prevStep;
-    stepInfoList.push_back(firstStep);
-
-    walkingDistance = 0;
-    numOfSteps = 0;
-    prevStepFrame = 0;
-    prevPrevStepFrame = 0;
-    prevCoM = (prevStep + prevPrevStep)/2;
     originalStepMap = stepMap.clone();
 }
 
@@ -520,7 +500,7 @@ void FootPrint::resetVoteChannel(const int dstChannel, cv::Mat *voteMap){
 
 
 void FootPrint::showResult(cv::Mat frame){
-    cv::resize(frame, frame, cv::Size(), IMAGE_WIDTH/frame.cols, IMAGE_HEIGHT/frame.rows);
+    cv::resize(frame, frame, cv::Size(), VIS_IMAGE_WIDTH/frame.cols, VIS_IMAGE_HEIGHT/frame.rows);
     cv::imshow("input image", frame);
     cv::imshow("step map", stepMap);
     cv::waitKey(1);
@@ -541,7 +521,7 @@ void FootPrint::exportPointsCSV() {
         vector<cv::Point3f> ptList = (i == E_RIGHT ? RstepList : LstepList);
         ofstream file(_result_folder + "/" + fileName);
         for(cv::Point3f pt : ptList){
-            file << pt.x * px_to_mm << " " << pt.y * px_to_mm << " " << pt.z << endl;
+            file << pt.x * PIXEL_SCALE << " " << pt.y * PIXEL_SCALE << " " << pt.z << endl;
         }
         file.close();
     }
