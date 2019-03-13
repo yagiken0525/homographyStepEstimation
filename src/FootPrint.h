@@ -30,15 +30,7 @@ enum EDirection {
 
 class FootPrint {
 public:
-    FootPrint(std::string project_name, std::string video_name){
-        _project_name = project_name;
-        _video_name = video_name;
-        _projects_path = "../projects/" + _project_name + "/";
-        _video_path = _projects_path + "/videos/" + _video_name + VIDEO_TYPE;
-        _openPose_path = "../projects/" + _project_name + "/openPoseData/";
-        _sfm_projects_path = "/home/yagi/sfmDR/projects/" + _project_name + "/";
-        _result_folder = _projects_path + "/results/" + video_name + "/";
-    };
+    FootPrint(std::string project_name, std::string video_name);
     ~FootPrint(){};
 
     typedef std::vector<bool> votelist;
@@ -97,29 +89,30 @@ public:
     std::string SHOW_IMAGE_PATH; // 何投票されたら接地点とみなすか
     int MIN_STRIDE;
     int VISUALIZE_FRAMES = 200;
-    int STEP_THRESHOLD = 5; // 何投票されたら接地点とみなすか
+    int STEP_THRESHOLD = 10; // 何投票されたら接地点とみなすか
     int CAMERA_NUM; // 接地カメラの個数
     int CAMERA_FIRST_ID; // 接地カメラの個数
-    int IMAGE_NUM; // 接地カメラの個数
-    int SEARCHING_RECT; // 接地カメラの個数
-    int RESULT_IMAGE_WIDTH; // 接地カメラの個数
-    int RESULT_IMAGE_HEIGHT; // 接地カメラの個数
+//    int IMAGE_NUM; // 接地カメラの個数
+//    int SEARCHING_RECT; // 接地カメラの個数
+//    int RESULT_IMAGE_WIDTH; // 接地カメラの個数
+//    int RESULT_IMAGE_HEIGHT; // 接地カメラの個数
     std::string VIDEO_TYPE = ".MP4"; // 接地カメラの個数
-    int VIDEO_FPS = 30; // 動画のfps
-    bool FACE_PLY = false; // 出力をメッシュファイルにするかどうか
-    int FINISH_FRAME = 5; // 出力をメッシュファイルにするかどうか
-    float ORIGINAL_IMAGE_WIDTH = 1920; // 出力をメッシュファイルにするかどうか
-    float ORIGINAL_IMAGE_HEIGHT = 1080; // 出力をメッシュファイルにするかどうか
+//    int VIDEO_FPS = 30; // 動画のfps
+//    bool FACE_PLY = false; // 出力をメッシュファイルにするかどうか
+//    int FINISH_FRAME = 5; // 出力をメッシュファイルにするかどうか
+//    float ORIGINAL_IMAGE_WIDTH = 1920; // 出力をメッシュファイルにするかどうか
+//    float ORIGINAL_IMAGE_HEIGHT = 1080; // 出力をメッシュファイルにするかどうか
     float IMAGE_WIDTH = 640.0; // 出力をメッシュファイルにするかどうか
     float IMAGE_HEIGHT = 320.0; // 出力をメッシュファイルにするかどうか
-    bool SELECT_TRACKER_BY_CLICKING = false;
-    bool SHOW_TRACKING_RESULT = false;
-    bool SHOW_REPROJECT_RESULT= true;
+//    bool SELECT_TRACKER_BY_CLICKING = true;
+//    bool SHOW_TRACKING_RESULT = false;
+//    bool SHOW_REPROJECT_RESULT= false;
     bool CHECKER_BOARD_CALIBRATION= true;
     int W = 9;
     int H = 6;
     float SCALE = 100.0; //mm
 
+    int OP_MASK_RADIUS = 10;
     int FLOOR_WIDTH = 150;
     int PLANE_WIDTH = 200;
     int POINT_DIST = 10;
@@ -134,7 +127,7 @@ public:
     bool ESTIMATE_RT = false;
     cv::Vec3b RIGHT_FOOT_COLOR = RIGHT_FOOT_COLOR = cv::Vec3b(0,0,255);
     cv::Vec3b LEFT_FOOT_COLOR = LEFT_FOOT_COLOR = cv::Vec3b(255,0,0);
-
+    cv::Mat firstFrame;
 
     std::vector<ImageInfo> imWebCamList;
     Camera webCam;
@@ -170,6 +163,7 @@ public:
     void generateOverViewImage(Camera &cm);
     void showAxis(Camera & cm);
     void loadFootImages();
+    void tracking(OpenPosePerson& prevPerson, OpenPosePerson& newTarget, std::vector<OpenPosePerson>& personList);
     void renewStepFlag(const int bdID, cv::Point2f pt);
     void initVoteChannel(const int dstChannel, cv::Mat *voteMap);
     void deletePrevSteps();
@@ -180,7 +174,7 @@ public:
     void InitStepMaps(OpenPosePerson target);
     void estimateCameraPoseWithImage(Camera& cm);
     void renewResultInfoIm(cv::Mat im);
-    void showResult();
+    void showResult(cv::Mat frame);
     void showResultHomography();
     void InitVoteList();
     void InitVoteListWebCam(OpenPosePerson& ps, Camera cm);
@@ -226,6 +220,7 @@ public:
     void estimateStepWithWebCam();
     void loadWebCamPram(Camera& cm);
     void estimateGroundPlane(cv::Mat points);
+    cv::Mat calcOpenPoseMask(std::vector<cv::Point2f> pts, cv::Size imsize);
 //    void estimateStepPositions();
     void outputTargetPersonInfo(CameraInfo &cam);
     cv::Mat3f generatePointCloudsAsMatrix(const int width, const int dist);
