@@ -128,6 +128,7 @@ public:
     cv::Vec3b RIGHT_FOOT_COLOR = RIGHT_FOOT_COLOR = cv::Vec3b(0,0,255);
     cv::Vec3b LEFT_FOOT_COLOR = LEFT_FOOT_COLOR = cv::Vec3b(255,0,0);
     cv::Mat firstFrame;
+    cv::Size overViewImSize = cv::Size(400, 200);
 
     std::vector<ImageInfo> imWebCamList;
     Camera webCam;
@@ -151,7 +152,7 @@ public:
     void selectImagePoints(std::vector<cv::Point2f> & clickedPoints);
     void selectWorldPoints(std::vector<cv::Point2f> & clickedPoints);
     void setup();
-    void estimateStepUsingHomography();
+    void mainProcess();
     void getBackGroundImage();
     void getHomographyMatrix();
     void cropStepMap();
@@ -165,13 +166,13 @@ public:
     void loadFootImages();
     void tracking(OpenPosePerson& prevPerson, OpenPosePerson& newTarget, std::vector<OpenPosePerson>& personList);
     void renewStepFlag(const int bdID, cv::Point2f pt);
-    void initVoteChannel(const int dstChannel, cv::Mat *voteMap);
+    void resetVoteChannel(const int dstChannel, cv::Mat *voteMap);
     void deletePrevSteps();
     void addNewStep(cv::Point2f stepPt, const int i, const int bdID);
     void visualizeFootPrint();
     void estimateStepAngle(Camera& cm, OpenPosePerson& newTarget, const int frameID);
     void estimateStepWithMultipleCameras();
-    void InitStepMaps(OpenPosePerson target);
+    void Init(OpenPosePerson target);
     void estimateCameraPoseWithImage(Camera& cm);
     void renewResultInfoIm(cv::Mat im);
     void showResult(cv::Mat frame);
@@ -220,11 +221,12 @@ public:
     void estimateStepWithWebCam();
     void loadWebCamPram(Camera& cm);
     void estimateGroundPlane(cv::Mat points);
-    cv::Mat calcOpenPoseMask(std::vector<cv::Point2f> pts, cv::Size imsize);
+//    cv::Mat calcOpenPoseMask(std::vector<cv::Point2f> pts, cv::Size imsize);
 //    void estimateStepPositions();
     void outputTargetPersonInfo(CameraInfo &cam);
     cv::Mat3f generatePointCloudsAsMatrix(const int width, const int dist);
 
+    int voteMapChannelNum = 2; //右足左足で2
     cv::Point2f prevStep;
     cv::Point2f prevProjectedPt;
     cv::Point2f prevCoM;
