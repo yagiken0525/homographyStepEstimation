@@ -30,17 +30,21 @@ if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
             )
 endif()
 
+set(SOURCE_FILES src/main.cpp src/FootPrint.cpp src/FootPrint.h )
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+
+# OpenCV
+include(OpenCV)
+
+# OpenPose
 find_package(GFlags)
 find_package(Glog)
 find_package(OpenPose REQUIRED)
-include(OpenCV)
 include_directories(${OpenPose_INCLUDE_DIRS} ${GFLAGS_INCLUDE_DIR} ${GLOG_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} /usr/local/include/eigen3)
+target_link_libraries(${PROJECT_NAME} ${OpenPose_LIBS} ${GFLAGS_LIBRARY} ${GLOG_LIBRARY})
 
+# basicFunc
 add_subdirectory(src/basicFunctions)
-set(SOURCE_FILES src/main.cpp src/FootPrint.cpp src/FootPrint.h )
-
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} basicFunc)
 
-target_link_libraries(${PROJECT_NAME} ${OpenPose_LIBS} ${GFLAGS_LIBRARY} ${GLOG_LIBRARY})
 

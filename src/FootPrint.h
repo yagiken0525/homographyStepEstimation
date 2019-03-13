@@ -5,10 +5,6 @@
 #ifndef FOOTPRINT_H
 #define FOOTPRINT_H
 
-//#include "pointCloud/Model.h"
-//#include "image/ImageInfo.h"
-//#include "camera/Camera.h"
-//#include "../src/openPose/OpenPosePerson.h"
 #include "../src/basicFunctions/basicFunction.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -36,12 +32,12 @@ public:
 
 
     // PROCESS
-    std::string VIDEO_TYPE = ".MP4"; // 入力動画の拡張子
+    std::string VIDEO_TYPE = ".mp4"; // 入力動画の拡張子
     bool USE_WEBCAM = false;  // 背景画像取得にwebカメラを使用
     bool TRACKING_MAX_PROB = false;  // openPoseの信頼度を元にトラッキング対象人物を決定
 
     // HOMOGRAPHY
-    bool USE_CHECKER_BOARD= true;  // ホモグラフィー推定にキャリブレーションボードを使用
+    bool USE_CHECKER_BOARD= false;  // ホモグラフィー推定にキャリブレーションボードを使用
     int W = 9; // キャリブレーションボード横
     int H = 6; // キャリブレーションボード縦
     float SCALE = 100.0; // キャリブレーションボード1マスの幅(mm)
@@ -49,12 +45,12 @@ public:
     float TARGET_AREA_HEIGHT = 1; //計測範囲(m)
 
     // VOTE
-    float PIXEL_SCALE = 0.1; //  1mmあたりのpixel数
-    int VOTE_RANGE = 5; //  投票範囲
-    int STEP_THRESHOLD = 10; //  接地判定のしきい値
+    float PIXEL_SCALE = 0.05; //  1mmあたりのpixel数
+    int VOTE_RANGE = 10; //  投票範囲
+    int STEP_THRESHOLD = 5; //  接地判定のしきい値
 
     // VISUALIZATION
-    int VISUALIZE_FRAMES = 200; //  可視化する近傍フレーム数
+    int VISUALIZE_FRAMES = 1000; //  可視化する近傍フレーム数
     float VIS_IMAGE_WIDTH = 640.0; //  出力結果画像幅
     float VIS_IMAGE_HEIGHT = 320.0; // 　出力結果画像高さ
 

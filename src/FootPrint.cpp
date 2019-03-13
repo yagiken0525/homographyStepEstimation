@@ -8,7 +8,7 @@
 #include <opencv2/sfm.hpp>
 
 using namespace std;
-using namespace yagi;
+using namespace bf;
 
 int sumVecElem(cv::Vec<unsigned char, CHANNEL> vec);
 void getCheckerBoardPoints( vector<cv::Point2f>& imagePoints,  vector<cv::Point2f>& scalePoints,
@@ -54,7 +54,9 @@ void FootPrint::getBackGroundImage() {
         if (USE_WEBCAM) {
             capture.open(0); // USBカメラのオープン
         }else{
-            capture.open( _projects_path + "/background" + VIDEO_TYPE);
+            cout << _video_path << endl;
+            if (capture.open( _projects_path + "/background" + VIDEO_TYPE) == false)
+                capture.open( _video_path);
         }
         while (1) {
             capture >> backGround;
@@ -117,7 +119,9 @@ void FootPrint::getHomographyMatrix(){
     }else{
         selectImagePoints(imagePoints);
         selectWorldPoints(scalePoints);
+
         warpH = cv::findHomography(imagePoints, scalePoints);
+        overViewImSize = cv::Size(scalePoints[2]);
         cv::warpPerspective(backGroundImage, overViewImage, warpH, overViewImSize);
     }
 }
@@ -127,7 +131,7 @@ void getCheckerBoardPoints( vector<cv::Point2f>& imagePoints,  vector<cv::Point2
                             const int W, const int H, const float SCALE, cv::Mat image, const int AREA_W, const int AREA_H){
     //チェッカーポイントの座標格納
     vector<cv::Point2f> checkerCorners;
-    yagi::generatePointCloudsIn2Dscale(checkerCorners, H, W, SCALE, AREA_W, AREA_H);
+    bf::generatePointCloudsIn2Dscale(checkerCorners, H, W, SCALE, AREA_W, AREA_H);
     scalePoints = checkerCorners;
     vector<cv::Point2f> detectedCorners;
     cv::findChessboardCorners(image, cv::Size(W, H), detectedCorners);
@@ -153,14 +157,14 @@ void FootPrint::selectImagePoints(std::vector<cv::Point2f> & clickedPoints){
     string pointFileName = _projects_path + "/cornerPoints.txt";
     ifstream pointFile(pointFileName);
     if(pointFile.fail()) {
-        yagi::clickPoints(backGroundImage, clickedPoints, pointFileName);
+        bf::clickPoints(backGroundImage, clickedPoints, pointFileName);
     }else{
         string str;
         vector<string> strList;
         while (getline(pointFile, str))
         {
             cv::Point2f pt;
-            strList = yagi::split(str, ' ');
+            strList = bf::split(str, ' ');
             pt.x = stof(strList[0]);
             pt.y = stof(strList[1]);
             clickedPoints.push_back(pt);
@@ -173,18 +177,18 @@ void FootPrint::selectWorldPoints(std::vector<cv::Point2f> & scalePoints){
     ifstream scaleFile(_projects_path + "/scale.txt");
     string str;
     vector<string> strList;
-    float imWidth = TARGET_AREA_WIDTH * MtoMM * PIXEL_SCALE;
-    float imHeight = TARGET_AREA_HEIGHT * MtoMM * PIXEL_SCALE;
+//    float imWidth = TARGET_AREA_WIDTH * MtoMM * PIXEL_SCALE;
+//    float imHeight = TARGET_AREA_HEIGHT * MtoMM * PIXEL_SCALE;
     while (getline(scaleFile, str))
     {
         cv::Point2f pt;
-        strList = yagi::split(str, ' ');
+        strList = bf::split(str, ' ');
         pt.x = stof(strList[0]);
         pt.y = stof(strList[1]);
         pt.x *= PIXEL_SCALE;
         pt.y *= PIXEL_SCALE;
-        pt.x += imWidth;
-        pt.y += imHeight;
+//        pt.x += imWidth;
+//        pt.y += imHeight;
 
         scalePoints.push_back(pt);
     }
@@ -343,14 +347,14 @@ void FootPrint::DetectTargetPerson(op::Array<float>& poses, vector<OpenPosePerso
         string trackingFileName = _projects_path + "/trackingTargetPosition.txt";
         ifstream pointFile(trackingFileName);
         if(pointFile.fail()) {
-            yagi::clickPoints(firstFrame, clickPoints, trackingFileName);
+            bf::clickPoints(firstFrame, clickPoints, trackingFileName);
         }else {
             string str;
             vector<string> strList;
             while (getline(pointFile, str))
             {
                 cv::Point2f pt;
-                strList = yagi::split(str, ' ');
+                strList = bf::split(str, ' ');
                 pt.x = stof(strList[0]);
                 pt.y = stof(strList[1]);
                 clickPoints.push_back(pt);
@@ -358,7 +362,7 @@ void FootPrint::DetectTargetPerson(op::Array<float>& poses, vector<OpenPosePerso
         }
         //TODO 複数人のトラッキング
         for (int personID = 0; personID < peopleNum; personID++) {
-            float dist = yagi::calc2PointDistance(personList[personID]._body_parts_coord[5], clickPoints[0]);
+            float dist = bf::calc2PointDistance(personList[personID]._body_parts_coord[5], clickPoints[0]);
             if(minDist > dist){
                 minDist = dist;
                 targetID = personID;
@@ -509,6 +513,7 @@ void FootPrint::showResult(cv::Mat frame){
 
 void FootPrint::outputResults(){
     myMkdir(_result_folder);
+    cv::imwrite(_result_folder + "/result.jpg", stepMap);
     exportPointsCSV();
     exportPointsTimeScale();
     exportVoteSomeForPx();

@@ -6,7 +6,7 @@ using namespace cv;
 
 int main() {
     // input "PROJECT_NAME" and "VIDEO_NAME"
-    FootPrint footPrint("test", "sample");
+    FootPrint footPrint("badminton", "badminton");
     footPrint.run();
     return 0;
 }
